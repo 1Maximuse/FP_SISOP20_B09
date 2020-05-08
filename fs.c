@@ -204,6 +204,7 @@ ialloc(uint dev, short type)
     if(dip->type == 0){  // a free inode
       memset(dip, 0, sizeof(*dip));
       dip->type = type;
+      dip->mode = DEFAULTMODE;
       log_write(bp);   // mark it allocated on the disk
       brelse(bp);
       return iget(dev, inum);
@@ -230,6 +231,7 @@ iupdate(struct inode *ip)
   dip->minor = ip->minor;
   dip->nlink = ip->nlink;
   dip->size = ip->size;
+  dip->mode = ip->mode;
   memmove(dip->addrs, ip->addrs, sizeof(ip->addrs));
   log_write(bp);
   brelse(bp);
@@ -303,6 +305,7 @@ ilock(struct inode *ip)
     ip->minor = dip->minor;
     ip->nlink = dip->nlink;
     ip->size = dip->size;
+    ip->mode = dip->mode;
     memmove(ip->addrs, dip->addrs, sizeof(ip->addrs));
     brelse(bp);
     ip->valid = 1;
@@ -444,6 +447,7 @@ stati(struct inode *ip, struct stat *st)
   st->type = ip->type;
   st->nlink = ip->nlink;
   st->size = ip->size;
+  st->mode = ip->mode;
 }
 
 //PAGEBREAK!
@@ -667,4 +671,17 @@ struct inode*
 nameiparent(char *path, char *name)
 {
   return namex(path, 1, name);
+}
+
+int
+chmod(struct inode* ip, uint mode)
+{
+  if (mode > 01777) return -1;
+  begin_op();
+  ilock(ip);
+  ip->mode = mode;
+  iunlock(ip);
+  iupdate(ip);
+  end_op();
+  return 0;
 }

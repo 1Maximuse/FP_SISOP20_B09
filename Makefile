@@ -185,6 +185,7 @@ UPROGS=\
 	_head\
 	_tail\
 	_mv\
+	_chmod\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
